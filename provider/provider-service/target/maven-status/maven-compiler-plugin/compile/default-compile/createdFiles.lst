@@ -1,0 +1,5 @@
+provider\service\remote\test\impl\TestRemoteAPIImpl.class
+provider\service\local\server\impl\IndexControllerServiceImpl.class
+provider\service\local\dao\UserInfDao.class
+provider\service\local\server\IndexControllerService.class
+provider\service\local\dao\BaseDao.class

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:aop="http://www.springframework.org/schema/aop"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-2.5.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://code.alibabatech.com/schema/dubbo
+        http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+        ">
+        
+        
+    <!-- 使支持resource等注解 -->
+    <context:annotation-config/>   
+     
+    <!--自动扫描包-->
+    <context:component-scan base-package="provider.service">
+    </context:component-scan>
+    
+    <!-- 开启事物注解配置 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    
+     <!--定义事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+    
+    <!--引入外部文件-->
+	<context:property-placeholder location="classpath:sql.properties"/>
+	
+	<!--配置数据库连接池-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"></property>
+        <property name="url" value="${jdbc.url}"></property>
+        <property name="username" value="${jdbc.username}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+    </bean>
+	
+	 <!--配置数据库会话bean-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--配置mybatis数据库连接池-->
+        <property name="dataSource" ref="dataSource"></property>
+        <!--自动将指定包下的类名转换成类的别名-->
+        <property name="typeAliasesPackage" value="org.base.common.entities"></property>
+         <!--自动会扫描指定包下的映射文件-->
+        <property name="mapperLocations" value="classpath:/mapper/*.xml"></property>
+        <!--加载mybatis 里面的配置-->
+        <property name="configLocation" value="classpath:mybatis-config.xml"></property>
+    </bean>
+        
+     <!--将dao层的接口和映射文件进行匹配-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="provider.service.local.dao"></property>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+    
+   <!-- 配置别名，目的是在后台可以看到这个服务的别名,这个参数可以随便写，见名知意-->
+   <dubbo:application name="provider-one"></dubbo:application>
+   
+   <!-- 配置注册中心
+   address 注册中心的地址
+   protocol 注册中心的协议格式-->
+   <dubbo:registry address="localhost:2181" protocol="zookeeper"></dubbo:registry>
+   
+   <!--配置端口，端口可以随便写，一个dubbo独占一个端口 -->
+   <dubbo:protocol name="dubbo" port="20880"></dubbo:protocol>
+   
+   <!-- 注册bean，远程测试接口 -->
+   <bean id="testRemoteAPI" class="provider.service.remote.test.TestRemoteAPIImpl"></bean>
+   <!--告诉注册中心我是谁
+    interface 代表类型
+    ref 代表具体发布哪个服务
+    timeout 连接超时时间-->
+    <dubbo:service interface="remote.api.dubbo.TestRemoteAPI" ref="testRemoteAPI" timeout="60000"></dubbo:service>
+  
+
+</beans>
